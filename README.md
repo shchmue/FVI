@@ -1,12 +1,12 @@
 # Firmware Version Inspector ![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
-Scans a NAND dump and identifies its firmware version and whether exFAT is present based on the names of the .nca files in SYSTEM:/Contents/registered.
+Scans a Nintendo Switch NAND dump and identifies its firmware version and whether exFAT is present based on the names of the .nca files in SYSTEM:/Contents/registered.
 
 ## Usage
 Requires Python 3 with pycryptodome (pycrypto works too):
 ```
 pip install pycryptodome
 ```
-`FVI` uses BIS key 2 if dump is still encrypted (i.e. a backup made with [Hekate](https://github.com/CTCaer/hekate)). It's required to decrypt the XTS-AES System partition. Get BIS keys with [biskeydump](https://github.com/rajkosto/biskeydump) and save the output to a text file to pass to `FVI` via the -b option.
+`FVI` uses BIS key 2 if the System partition is still encrypted (i.e. a backup made with [Hekate](https://github.com/CTCaer/hekate)). Get BIS keys with [biskeydump](https://github.com/rajkosto/biskeydump) and save the output to a text file to pass to `FVI` via the -b option.
 
 Then run from command line:
 ```
