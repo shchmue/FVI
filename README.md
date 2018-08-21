@@ -27,6 +27,10 @@ Until now, this could only be done by manually checking the files in that folder
 
 This program consults a hard-coded file list obtained using these techniques. It will be updated as future firmware versions are released to keep it fast and low on dependencies.
 
+Most recent boot time is determined by examining the modify date on the system save `8000000000000060 'SslSave'` which my testing showed is modified on every boot.
+
+Note: This script detects exFAT by looking for `010000000000081B` which means that a 'hacked' exFAT implementation that only patches `0100000000000819` will not register as a dump containing exFAT. This is by design to keep the script fast and simple by avoiding decryption of system titles.
+
 ## Credits
 `crypto.py` module is from [switchfs](https://github.com/ihaveamac/switchfs/blob/master/switchfs/crypto.py) under MIT license - it was in turn ported to Python 3 from [crypto.py](https://gist.github.com/plutooo/fd4b22e7f533e780c1759057095d7896) gist by [plutooo](https://github.com/plutooo)
 

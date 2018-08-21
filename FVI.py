@@ -3,6 +3,7 @@ Firmware Version Inspector by shchmue
 Inspects firmware version from Nintendo Switch NAND dump
 '''
 
+import datetime
 import os
 import sys
 from crypto import XTSN
@@ -82,6 +83,14 @@ def get_cluster(buffer, addr):
     return int.from_bytes(buffer[addr+0x1a:addr+0x1a+2] +
                           buffer[addr+0x14:addr+0x14+2], 'little') - 2
 
+def get_modify_date_and_time(buffer, addr):
+    '''get modify date and time string from file entry'''
+    date = int.from_bytes(buffer[addr+0x18:addr+0x1a], 'little')
+    time = int.from_bytes(buffer[addr+0x16:addr+0x18], 'little')
+    d = datetime.datetime(1980 + (date >> 9), (date >> 5) & 0xf, date & 0x1f,
+                          time >> 11, (time >> 5) & 0x3f, time & 0x1f)
+    return '{:%Y-%m-%d %H:%M:%S}'.format(d)
+
 def cluster_to_address(cluster_num, root):
     '''return real address from cluster number given root address'''
     return FAT['bytes per sector'] * (cluster_num * FAT['sectors per cluster']) + root
@@ -89,7 +98,10 @@ def cluster_to_address(cluster_num, root):
 def find_record_by_filename(buffer, name: bytes):
     '''return offset for file record matching name'''
     offset = 0
-    while buffer[offset:offset+8] != name and offset < len(buffer):
+    name = name.ljust(8, b' ') # space-pad short names to avoid false positives
+    if len(name) > 8:
+        name = name[:8]
+    while buffer[offset:offset+len(name)] != name and offset < len(buffer):
         offset += 0x20
 
     if offset >= len(buffer):
@@ -190,6 +202,41 @@ with open(dump_file, 'rb') as f:
     print('/Contents/ found at cluster', hex(contents_cluster + 2),
           'address', hex(contents_addr))
 
+    print('')
+    print('Scanning root for /save/...')
+    dir_table_offset = find_record_by_filename(cluster, b'SAVE')
+
+    if not dir_table_offset:
+        sys.exit('/save/ not found.')
+
+    save_cluster = get_cluster(cluster, dir_table_offset)
+    save_addr = cluster_to_address(save_cluster, root_addr)
+    print('/save/ found at cluster', hex(save_cluster + 2),
+          'address', hex(save_addr))
+
+    cluster = read_cluster_from_file(f, save_addr)
+
+    print('')
+    print('Scanning /save/ for System Savegame 8000000000000060...')
+    block_ptr = 0
+    most_recent_boot = ''
+    while block_ptr < len(cluster):
+        # if this is a LFN entry, the 3rd byte is the empty
+        # upper byte of a UCS-2 encoded ASCII character
+        if cluster[block_ptr + 2] != 0:
+            block_ptr += 0x20
+        elif cluster[block_ptr:block_ptr+4] == b'\x00\x00\x00\x00':
+            break
+        else:
+            lfn_length = 0x20 * ((cluster[block_ptr] & 0x1f) + 1)
+            filename = unpack_lfn(cluster[block_ptr:block_ptr+lfn_length])
+            if filename == '8000000000000060':
+                print('Success! Found /save/8000000000000060.')
+                while cluster[block_ptr:block_ptr+6] != b'800000':
+                    block_ptr += 0x20
+                most_recent_boot = get_modify_date_and_time(cluster, block_ptr)
+            block_ptr += lfn_length
+
     cluster = read_cluster_from_file(f, contents_addr)
 
     print('')
@@ -247,11 +294,13 @@ with open(dump_file, 'rb') as f:
 
     for version in SYSTEM_VERSION_TITLES:
         if version[1] in filename_list:
+            print('')
             print('Firmware version found:', version[0], end='')
             if EXFAT_PACKAGEC_TITLES[version[0]] in filename_list:
                 print(' (exFAT)')
             else:
                 print(' (no exFAT)')
+            print('Most recent boot:', most_recent_boot)
             break
     else:
         sys.exit('System Version Title not found!')
