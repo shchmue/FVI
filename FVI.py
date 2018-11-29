@@ -121,6 +121,8 @@ def find_record_by_filename(buffer, name: bytes):
 
 def unpack_lfn(buffer):
     '''return filename from long file name entry'''
+    if buffer[0] == 0xe5:
+        return ''
     lfn = bytes()
     for lfn_index in range(buffer[0] & 0x1f):
         lfn_entry = buffer[0x20*lfn_index:0x20*lfn_index+0x20]
