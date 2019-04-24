@@ -70,6 +70,8 @@ def print_usage():
     print(' biskeyfile must contain the following lines:')
     print('   BIS Key 2 (crypt): <32-digit hex key>')
     print('   BIS Key 2 (tweak): <32-digit hex key>')
+    print('  or')
+    print('   bis_key_02 = <64-digit hex key>')
     print('  omit -b if System partition already decrypted (eg. dumped with HacDiskMount)')
     print(' dumpfile must be NAND dump (eg. Hekate rawnand.bin dump) or System partition')
     print('')
@@ -172,13 +174,28 @@ if bis_key_file:
         sys.exit('BIS key file ' + bis_key_file + ' not found.')
     crypt, tweak = bytes(), bytes()
     with open(bis_key_file, 'r') as bf:
-        for line in bf:
-            key_type = line[:line.find(':')]
-            key_index = len(key_type) + 2
-            if key_type.lower() == 'bis key 2 (crypt)':
-                crypt = bytes.fromhex(line[key_index:key_index+0x20])
-            elif key_type.lower() == 'bis key 2 (tweak)':
-                tweak = bytes.fromhex(line[key_index:key_index+0x20])
+        line = bf.readline()
+        bf.seek(0)
+        if ':' in line:
+            separator = ':'
+            for line in bf:
+                key_type = line[:line.find(separator)]
+                key_index = len(key_type) + 2
+                if key_type.lower() == 'bis key 2 (crypt)':
+                    crypt = bytes.fromhex(line[key_index:key_index+0x20])
+                elif key_type.lower() == 'bis key 2 (tweak)':
+                    tweak = bytes.fromhex(line[key_index:key_index+0x20])
+        elif '=' in line:
+            separator = '='
+            for line in bf:
+                key_type = line[:line.find(separator)-1]
+                key_index = len(key_type) + 3
+                if key_type.lower() == 'bis_key_02':
+                    crypt = bytes.fromhex(line[key_index:key_index+0x20])
+                    tweak = bytes.fromhex(line[key_index+0x20:key_index+0x40])
+                    break
+        else:
+            sys.exit('First line of BIS key file does not contain a key.')
 
     if not crypt or not tweak:
         print_usage()
