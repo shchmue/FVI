@@ -39,7 +39,7 @@ SYSTEM_VERSION_TITLES = [ # NCA filenames for System Version Title
 ]
 
 EXFAT_PACKAGEC_TITLES = { # NCA filenames for exFAT variant of Package C Titles
-    '8.1.0': '8f186200f9aaac764caf24d1abc7c434.nca',
+    '8.1.0': '96f4b8b729ade072cc661d9700955258.nca',
     '8.0.1': 'b2708136b24bbe206e502578000b1998.nca',
     '8.0.0': 'b2708136b24bbe206e502578000b1998.nca',
     '7.0.1': '02a2cbfd48b2f2f3a6cec378d20a5eff.nca',
