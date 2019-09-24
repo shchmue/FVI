@@ -162,13 +162,17 @@ if not os.path.exists(dump_file):
     sys.exit('Dump file ' + dump_file + ' not found.')
 
 system_offset = 0
-if os.stat(dump_file).st_size == 0x747c00000:
+dump_file_size = os.stat(dump_file).st_size
+if dump_file_size == 0x747c00000:
     print('Dump is full EMMC raw NAND.')
     system_offset = 0x7800000
-elif os.stat(dump_file).st_size == 0xa0000000:
+elif dump_file_size == 0xa0000000:
     print('Dump is System partition.')
+elif dump_file_size == 0x748400000:
+    print('Dump is emuMMC.')
+    system_offset = 0x8000000
 else:
-    print('Unrecognized file size.')
+    sys.exit('Unrecognized file size.')
 
 # check if we need BIS keys
 is_encrypted = False
@@ -216,13 +220,6 @@ else:
 with open(dump_file, 'rb') as f:
     cluster = read_cluster_from_file(f, 0)
     if not is_encrypted and not is_fat32(cluster):
-        dump_file_size = os.stat(dump_file).st_size
-        if dump_file_size == 0x748400000:
-            system_offset = 0x8000000
-        elif dump_file_size >= 0x7800000 + CLUSTER_SIZE:
-            system_offset = 0x7800000
-        else:
-            sys.exit('FAT boot sector not found! Check BIS keys.')
         cluster = read_cluster_from_file(f, 0)
         if not is_fat32(cluster):
             sys.exit('FAT boot sector not found! Check BIS keys.')
