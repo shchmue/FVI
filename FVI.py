@@ -216,12 +216,15 @@ else:
 with open(dump_file, 'rb') as f:
     cluster = read_cluster_from_file(f, 0)
     if not is_encrypted and not is_fat32(cluster):
-        if os.stat(dump_file).st_size >= 0x7800000 + CLUSTER_SIZE:
+        dump_file_size = os.stat(dump_file).st_size
+        if dump_file_size == 0x748400000:
+            system_offset = 0x8000000
+        elif dump_file_size >= 0x7800000 + CLUSTER_SIZE:
             system_offset = 0x7800000
-            cluster = read_cluster_from_file(f, 0)
-            if not is_fat32(cluster):
-                sys.exit('FAT boot sector not found! Check BIS keys.')
         else:
+            sys.exit('FAT boot sector not found! Check BIS keys.')
+        cluster = read_cluster_from_file(f, 0)
+        if not is_fat32(cluster):
             sys.exit('FAT boot sector not found! Check BIS keys.')
 
     print('Found FAT boot sector!')
