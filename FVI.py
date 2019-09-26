@@ -111,8 +111,11 @@ def get_modify_date_and_time(buffer, addr):
     '''get modify date and time string from file entry'''
     date = int.from_bytes(buffer[addr+0x18:addr+0x1a], 'little')
     time = int.from_bytes(buffer[addr+0x16:addr+0x18], 'little')
-    d = datetime.datetime(1980 + (date >> 9), (date >> 5) & 0xf, date & 0x1f,
-                          time >> 11, (time >> 5) & 0x3f, time & 0x1f)
+    try:
+        d = datetime.datetime(1980 + (date >> 9), (date >> 5) & 0xf, date & 0x1f,
+                            time >> 11, (time >> 5) & 0x3f, (time & 0x1f) * 2)
+    except ValueError:
+        return "Invalid date"
     return '{:%Y-%m-%d %H:%M:%S}'.format(d)
 
 def cluster_to_address(cluster_num, root):
