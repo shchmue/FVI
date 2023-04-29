@@ -127,6 +127,11 @@ dump_file_size = os.stat(dump_file).st_size
 if dump_file_size == 0x747c00000:
     print('Dump is full EMMC raw NAND.')
     system_offset = 0x7800000
+if dump_file_size == 0x80000000:
+    print('Dump is 2gb part of full EMMC raw NAND.')
+    if not dump_file[-14:]=="rawnand.bin.00":
+        sys.exit('Error! Use fisrt 2gb part (rawnand.bin.00)')
+    system_offset = 0x7800000
 elif dump_file_size == 0xa0000000:
     print('Dump is System partition.')
 elif dump_file_size == 0x748400000:
